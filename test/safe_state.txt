@@ -1,0 +1,32 @@
+# Safe State Test Input
+# Classical Banker's Algorithm Example
+# Expected: No deadlock, Safe sequence P1→P3→P4→P0→P2
+
+Processes: 5
+Resources: 3
+
+# Available resources
+Available: 3 3 2
+
+# Allocation Matrix (current resource holdings)
+Allocation:
+P0: 0 1 0
+P1: 2 0 0
+P2: 3 0 2
+P3: 2 1 1
+P4: 0 0 2
+
+# Maximum Need Matrix
+Maximum:
+P0: 7 5 3
+P1: 3 2 2
+P2: 9 0 2
+P3: 2 2 2
+P4: 4 3 3
+
+# Need Matrix (Max - Allocation)
+# P0: 7 4 3
+# P1: 1 2 2
+# P2: 6 0 0
+# P3: 0 1 1
+# P4: 4 3 1

@@ -1,0 +1,32 @@
+# Deadlock State Test Input
+# Circular Wait Scenario
+# Expected: DEADLOCK detected
+
+Processes: 4
+Resources: 3
+
+# No available resources - cannot satisfy any process
+Available: 0 0 0
+
+# Allocation Matrix (processes hold resources)
+Allocation:
+P0: 1 0 1
+P1: 1 1 0
+P2: 0 1 1
+P3: 1 0 0
+
+# Maximum Need Matrix (processes need more)
+Maximum:
+P0: 2 1 2
+P1: 2 2 1
+P2: 1 2 2
+P3: 2 1 1
+
+# Need Matrix (Max - Allocation)
+# P0: 1 1 1 - needs resources but none available
+# P1: 1 1 1 - needs resources but none available
+# P2: 1 1 1 - needs resources but none available
+# P3: 1 1 1 - needs resources but none available
+
+# Analysis: All processes need at least one of each resource
+# but available = [0,0,0], creating a deadlock condition
