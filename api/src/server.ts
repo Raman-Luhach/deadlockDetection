@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { detectDeadlock, validateDetectRequest, type DetectRequest } from './detector';
+import { buildRag, type RagRequest } from './rag';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,6 +47,26 @@ app.post('/api/detect', (req, res) => {
     return;
   }
   const result = detectDeadlock(req.body as DetectRequest);
+  res.json(result);
+});
+
+/**
+ * POST /api/rag
+ * Builds a Resource Allocation Graph from the given system state.
+ *
+ * Request body: same as /api/detect.
+ *
+ * Response (JSON):
+ *   - nodes: { id, label, type: "process"|"resource" }[]
+ *   - edges: { from, to, type: "request"|"assignment" }[]
+ */
+app.post('/api/rag', (req, res) => {
+  const validationError = validateDetectRequest(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  const result = buildRag(req.body as RagRequest);
   res.json(result);
 });
 
