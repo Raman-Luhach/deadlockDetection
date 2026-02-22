@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  width: 100%;
 }
 
 .home h1 {
@@ -14,4 +15,33 @@
 .subtitle {
   font-size: 1.2em;
   color: #888;
+  margin-bottom: 2rem;
+}
+
+.config-preview {
+  margin-top: 2rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid #444;
+  border-radius: 8px;
+  text-align: left;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.config-preview h3 {
+  margin-top: 0;
+  font-size: 1.1em;
+}
+
+.config-preview p {
+  margin: 0.3em 0;
+  font-size: 0.95em;
+  font-family: monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  .config-preview {
+    border-color: #ddd;
+  }
 }
