@@ -93,6 +93,37 @@ Constraints: all values non-negative; `allocation[i][j] <= max_need[i][j]`.
 
 Invalid request body returns `400` with `{ "error": "message" }`.
 
+### `POST /api/rag`
+
+Builds the Resource Allocation Graph (RAG) for the given system state. Request body is the same as `POST /api/detect`.
+
+**Request body:** Same as `POST /api/detect` (`num_processes`, `num_resources`, `available`, `allocation`, `max_need`).
+
+**Response (JSON):**
+
+| Field   | Type  | Description |
+|--------|-------|-------------|
+| `nodes` | array | RAG nodes: process nodes (id 0..num_processes-1, label P0, P1, …, type `"process"`) and resource nodes (id num_processes..num_processes+num_resources-1, label R0, R1, …, type `"resource"`) |
+| `edges` | array | RAG edges: each has `from`, `to` (node ids), and `type`: `"request"` (process → resource) or `"assignment"` (resource → process) |
+
+**Example response:**
+```json
+{
+  "nodes": [
+    { "id": 0, "label": "P0", "type": "process" },
+    { "id": 1, "label": "P1", "type": "process" },
+    { "id": 2, "label": "R0", "type": "resource" },
+    { "id": 3, "label": "R1", "type": "resource" }
+  ],
+  "edges": [
+    { "from": 2, "to": 0, "type": "assignment" },
+    { "from": 0, "to": 3, "type": "request" }
+  ]
+}
+```
+
+Invalid request body returns `400` with `{ "error": "message" }`.
+
 ## CORS
 
 Configured to allow requests from the frontend dev server at `http://localhost:5173`.

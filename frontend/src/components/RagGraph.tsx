@@ -116,18 +116,18 @@ function RagGraph({ config }: Props) {
     <div className="rag-container">
       <h3>Resource Allocation Graph</h3>
 
-      <div className="rag-legend">
-        <span className="legend-item">
+      <div className="rag-legend" role="img" aria-label="Legend">
+        <span className="legend-item" title="Process node">
           <span className="legend-circle process-legend" /> Process
         </span>
-        <span className="legend-item">
+        <span className="legend-item" title="Resource node">
           <span className="legend-square resource-legend" /> Resource
         </span>
-        <span className="legend-item">
-          <span className="legend-line request-legend" /> Request
+        <span className="legend-item" title="Process waits for resource">
+          <span className="legend-line request-legend" /> Request (P → R)
         </span>
-        <span className="legend-item">
-          <span className="legend-line assignment-legend" /> Assignment
+        <span className="legend-item" title="Resource allocated to process">
+          <span className="legend-line assignment-legend" /> Assignment (R → P)
         </span>
       </div>
 
@@ -137,11 +137,13 @@ function RagGraph({ config }: Props) {
       {!loading && !error && (
         <div className="rag-flow-wrapper">
           <ReactFlow
+            key={JSON.stringify(config)}
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             fitView
+            fitViewOptions={{ padding: 0.2, maxZoom: 1.2 }}
             attributionPosition="bottom-left"
           >
             <Background />
