@@ -93,6 +93,14 @@ Constraints: all values non-negative; `allocation[i][j] <= max_need[i][j]`.
 
 Invalid request body returns `400` with `{ "error": "message" }`.
 
+### `POST /api/export`
+
+Validates the given system state and returns it as JSON. Intended for export: the client sends the current state and receives it back (validated); the response can be saved as a file and later re-imported.
+
+**Request body:** Same as `POST /api/detect` (`num_processes`, `num_resources`, `available`, `allocation`, `max_need`).
+
+**Response (JSON):** The same state object (validated). Invalid state returns `400` with `{ "error": "message" }`.
+
 ### `POST /api/detect/step`
 
 Executes **one step** of the Banker's safety algorithm. Use repeatedly to step through the algorithm.

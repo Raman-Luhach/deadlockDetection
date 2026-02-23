@@ -61,6 +61,21 @@ app.post('/api/detect', (req, res) => {
 });
 
 /**
+ * POST /api/export
+ * Validates the given system state and returns it as JSON (for use when exporting state to a file).
+ * Request body: same as /api/detect (num_processes, num_resources, available, allocation, max_need).
+ * Response: the same state object (validated). Client can use this as the contents of an exported file.
+ */
+app.post('/api/export', (req, res) => {
+  const validationError = validateDetectRequest(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  res.json(req.body);
+});
+
+/**
  * POST /api/detect/step
  * Executes one step of the Banker's safety algorithm.
  *

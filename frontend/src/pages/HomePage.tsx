@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import '../App.css'
 import SystemConfigForm from '../components/SystemConfigForm'
 import DetectionResultView from '../components/DetectionResultView'
 import StepByStepView from '../components/StepByStepView'
 import RagGraph from '../components/RagGraph'
-import { detectDeadlock, resolveDeadlock } from '../services/api'
+import {
+  detectDeadlock,
+  resolveDeadlock,
+  exportState,
+  parseAndValidateImportedState,
+} from '../services/api'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'
 
@@ -16,6 +21,8 @@ function HomePage() {
   const [highlightedProcess, setHighlightedProcess] = useState<number | null>(null)
   const [resolving, setResolving] = useState(false)
   const [resolveMsg, setResolveMsg] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDetect = async () => {
     if (!config) return
@@ -71,6 +78,47 @@ function HomePage() {
     setResolveMsg(null)
   }
 
+  const handleExport = async () => {
+    if (!config) return
+    setExporting(true)
+    setError(null)
+    try {
+      const json = await exportState(config)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'deadlock-state.json'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const text = reader.result as string
+        const imported = parseAndValidateImportedState(text)
+        setConfig(imported)
+        setResult(null)
+        setHighlightedProcess(null)
+        setResolveMsg(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Invalid state file')
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <div className="home">
       <h1>Deadlock Detection System</h1>
@@ -78,7 +126,20 @@ function HomePage() {
         Visualize and analyze deadlocks using the Banker's Algorithm and Resource Allocation Graphs
       </p>
 
-      <SystemConfigForm onSave={handleSave} highlightedProcess={highlightedProcess} />
+      <SystemConfigForm
+        onSave={handleSave}
+        highlightedProcess={highlightedProcess}
+        initialConfig={config}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="file-input-hidden"
+        aria-hidden
+        onChange={handleImport}
+      />
 
       {config && (
         <>
@@ -90,6 +151,23 @@ function HomePage() {
             <p>
               Available: [{config.available.join(', ')}]
             </p>
+            <div className="export-import-row">
+              <button
+                type="button"
+                className="export-btn"
+                onClick={handleExport}
+                disabled={exporting}
+              >
+                {exporting ? 'Exporting...' : 'Export state'}
+              </button>
+              <button
+                type="button"
+                className="import-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Import state
+              </button>
+            </div>
           </div>
 
           <div className="detect-section">

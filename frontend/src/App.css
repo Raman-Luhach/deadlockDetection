@@ -40,6 +40,44 @@
   font-family: monospace;
 }
 
+.export-import-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.export-btn,
+.import-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9em;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #333;
+  color: #eee;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.export-btn:hover,
+.import-btn:hover {
+  background: #444;
+  border-color: #666;
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .resolve-section {
   margin-top: 1rem;
   text-align: center;

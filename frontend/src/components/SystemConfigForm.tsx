@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { SystemConfig } from '../types/system'
 import './SystemConfigForm.css'
 
 interface Props {
   onSave: (config: SystemConfig) => void
   highlightedProcess?: number | null
+  /** When set (e.g. after import), form state is synced to this config. */
+  initialConfig?: SystemConfig | null
 }
 
-function SystemConfigForm({ onSave, highlightedProcess }: Props) {
+function SystemConfigForm({ onSave, highlightedProcess, initialConfig }: Props) {
   const [numProcesses, setNumProcesses] = useState(3)
   const [numResources, setNumResources] = useState(3)
   const [available, setAvailable] = useState<number[]>([0, 0, 0])
@@ -23,6 +25,17 @@ function SystemConfigForm({ onSave, highlightedProcess }: Props) {
   ])
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!initialConfig) return
+    setNumProcesses(initialConfig.numProcesses)
+    setNumResources(initialConfig.numResources)
+    setAvailable([...initialConfig.available])
+    setAllocation(initialConfig.allocation.map((r) => [...r]))
+    setMaxNeed(initialConfig.maxNeed.map((r) => [...r]))
+    setErrors([])
+    setSaved(false)
+  }, [initialConfig])
 
   const resizeDimensions = useCallback(
     (newProcesses: number, newResources: number) => {
