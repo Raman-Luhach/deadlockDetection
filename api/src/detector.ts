@@ -77,6 +77,111 @@ export function detectDeadlock(req: DetectRequest): DetectResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Deadlock resolution (terminate one process)                        */
+/* ------------------------------------------------------------------ */
+
+export interface ResolveRequest extends DetectRequest {
+  /** Optional. If omitted, a victim is chosen (min total allocation among deadlocked). */
+  victim_process_index?: number;
+}
+
+export interface ResolveResponse {
+  /** Updated system state after terminating the victim. */
+  state: DetectRequest;
+  /** Result of running detection on the new state. */
+  result: DetectResponse;
+  /** Process index that was terminated. */
+  victim_process: number;
+}
+
+/**
+ * Resolves deadlock by terminating one process (victim).
+ * If no victim is provided, picks the deadlocked process with minimum total allocation.
+ * Returns the new state and the detection result on that state.
+ * @throws Error if the current state is not deadlocked
+ */
+export function resolveDeadlock(req: ResolveRequest): ResolveResponse {
+  const detection = detectDeadlock(req);
+  if (!detection.is_deadlocked || detection.deadlocked_processes.length === 0) {
+    throw new Error('State is not deadlocked; resolution not applicable.');
+  }
+
+  const { num_processes, num_resources, available, allocation, max_need } = req;
+  const deadlocked = detection.deadlocked_processes;
+
+  let victim: number;
+  if (req.victim_process_index !== undefined && req.victim_process_index !== null) {
+    if (
+      req.victim_process_index < 0 ||
+      req.victim_process_index >= num_processes ||
+      !deadlocked.includes(req.victim_process_index)
+    ) {
+      throw new Error(
+        `victim_process_index must be a deadlocked process index (one of [${deadlocked.join(', ')}]).`
+      );
+    }
+    victim = req.victim_process_index;
+  } else {
+    // Choose victim: minimum total allocation among deadlocked
+    let minTotal = Infinity;
+    victim = deadlocked[0];
+    for (const i of deadlocked) {
+      let total = 0;
+      for (let j = 0; j < num_resources; j++) total += allocation[i][j];
+      if (total < minTotal) {
+        minTotal = total;
+        victim = i;
+      }
+    }
+  }
+
+  // New state: add victim's allocation to available, zero victim's allocation and max_need
+  const newAvailable = available.map((a, j) => a + allocation[victim][j]);
+  const newAllocation = allocation.map((row, i) =>
+    i === victim ? row.map(() => 0) : [...row]
+  );
+  const newMaxNeed = max_need.map((row, i) =>
+    i === victim ? row.map(() => 0) : [...row]
+  );
+
+  const newState: DetectRequest = {
+    num_processes,
+    num_resources,
+    available: newAvailable,
+    allocation: newAllocation,
+    max_need: newMaxNeed,
+  };
+
+  const newResult = detectDeadlock(newState);
+  return {
+    state: newState,
+    result: newResult,
+    victim_process: victim,
+  };
+}
+
+/**
+ * Validates request body for POST /api/resolve.
+ * Same as detect + optional victim_process_index (number, 0..num_processes-1).
+ */
+export function validateResolveRequest(body: unknown): string | null {
+  const baseError = validateDetectRequest(body);
+  if (baseError) return baseError;
+
+  const b = body as Record<string, unknown>;
+  const np = b.num_processes as number;
+
+  if (b.victim_process_index !== undefined && b.victim_process_index !== null) {
+    const v = b.victim_process_index;
+    if (typeof v !== 'number' || v < 0 || v >= np) {
+      return `victim_process_index must be a number between 0 and ${np - 1}`;
+    }
+  }
+
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Step-by-step Banker's Algorithm                                    */
 /* ------------------------------------------------------------------ */
 

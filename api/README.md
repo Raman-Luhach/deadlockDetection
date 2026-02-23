@@ -121,6 +121,45 @@ Executes **one step** of the Banker's safety algorithm. Use repeatedly to step t
 
 Invalid request body returns `400` with `{ "error": "message" }`.
 
+### `POST /api/resolve`
+
+Resolves deadlock by terminating one process (victim). The victim’s allocation is added to `available`, and the victim’s `allocation` and `max_need` rows are zeroed. Returns the updated state and the result of running detection on it.
+
+**Request body (JSON):**
+
+- Same as `POST /api/detect`: `num_processes`, `num_resources`, `available`, `allocation`, `max_need`.
+- **`victim_process_index`** (optional): process index to terminate. Must be one of the current deadlocked process indices. If omitted, the API selects the deadlocked process with **minimum total allocation**.
+
+**Response (JSON):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `state` | object | Updated system state: same shape as request; victim’s allocation added to `available`, victim’s `allocation` and `max_need` rows set to zero |
+| `result` | object | Result of running detection on `state`: `is_deadlocked`, `deadlocked_processes`, `safe_sequence`, `safe_sequence_length` |
+| `victim_process` | number | The process index that was terminated |
+
+**Example response (deadlock resolved):**
+```json
+{
+  "state": {
+    "num_processes": 4,
+    "num_resources": 3,
+    "available": [1, 1, 1],
+    "allocation": [[0,0,0],[1,1,0],[0,1,1],[1,0,0]],
+    "max_need": [[0,0,0],[2,2,1],[1,2,2],[2,1,1]]
+  },
+  "result": {
+    "is_deadlocked": false,
+    "deadlocked_processes": [],
+    "safe_sequence": [1, 2, 3],
+    "safe_sequence_length": 3
+  },
+  "victim_process": 0
+}
+```
+
+Returns `400` with `{ "error": "message" }` if the current state is not deadlocked or if `victim_process_index` is not a valid deadlocked process index.
+
 ### `POST /api/rag`
 
 Builds the Resource Allocation Graph (RAG) for the given system state. Request body is the same as `POST /api/detect`.

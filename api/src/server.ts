@@ -4,9 +4,12 @@ import {
   detectDeadlock,
   validateDetectRequest,
   validateStepRequest,
+  validateResolveRequest,
   detectDeadlockStep,
+  resolveDeadlock,
   type DetectRequest,
   type StepRequest,
+  type ResolveRequest,
 } from './detector';
 import { buildRag, type RagRequest } from './rag';
 
@@ -83,6 +86,37 @@ app.post('/api/detect/step', (req, res) => {
   }
   const result = detectDeadlockStep(req.body as StepRequest);
   res.json(result);
+});
+
+/**
+ * POST /api/resolve
+ * Resolves deadlock by terminating one process (victim). Returns updated state and detection result.
+ *
+ * Request body (JSON):
+ *   - Same as /api/detect (num_processes, num_resources, available, allocation, max_need)
+ *   - victim_process_index (optional): process index to terminate; must be one of the deadlocked processes.
+ *     If omitted, the API picks the deadlocked process with minimum total allocation.
+ *
+ * Response (JSON):
+ *   - state: updated system state (victim's allocation added to available, victim's allocation and max_need zeroed)
+ *   - result: result of running detection on the new state (is_deadlocked, safe_sequence, etc.)
+ *   - victim_process: the process index that was terminated
+ *
+ * Returns 400 if the current state is not deadlocked or victim_process_index is invalid.
+ */
+app.post('/api/resolve', (req, res) => {
+  const validationError = validateResolveRequest(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  try {
+    const result = resolveDeadlock(req.body as ResolveRequest);
+    res.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Resolution failed';
+    res.status(400).json({ error: message });
+  }
 });
 
 /**
