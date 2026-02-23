@@ -1,9 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import '../App.css'
 import SystemConfigForm from '../components/SystemConfigForm'
 import DetectionResultView from '../components/DetectionResultView'
-import StepByStepView from '../components/StepByStepView'
-import RagGraph from '../components/RagGraph'
 import {
   detectDeadlock,
   resolveDeadlock,
@@ -11,20 +9,26 @@ import {
   parseAndValidateImportedState,
 } from '../services/api'
 import type { SystemConfig } from '../types/system'
-import type { DetectionResult } from '../types/detection'
 import { sampleScenarios } from '../data/sampleScenarios'
+import { useAppState } from '../context/AppContext'
 
 function HomePage() {
-  const [config, setConfig] = useState<SystemConfig | null>(null)
-  const [result, setResult] = useState<DetectionResult | null>(null)
+  const {
+    config,
+    setConfig,
+    result,
+    setResult,
+    setHighlightedProcess,
+    formKey,
+    bumpFormKey,
+    fileInputRef,
+  } = useAppState()
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [highlightedProcess, setHighlightedProcess] = useState<number | null>(null)
   const [resolving, setResolving] = useState(false)
   const [resolveMsg, setResolveMsg] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
-  const [formKey, setFormKey] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDetect = async () => {
     if (!config) return
@@ -58,7 +62,7 @@ function HomePage() {
         maxNeed: res.state.max_need,
       }
       setConfig(updatedConfig)
-      setFormKey((k) => k + 1)
+      bumpFormKey()
       setResult(res.result)
       setResolveMsg(
         `Terminated P${res.victim_process} — resources released. ` +
@@ -79,7 +83,7 @@ function HomePage() {
     setError(null)
     setHighlightedProcess(null)
     setResolveMsg(null)
-    setFormKey((k) => k + 1)
+    bumpFormKey()
   }
 
   const handleExport = async () => {
@@ -113,7 +117,7 @@ function HomePage() {
         const text = reader.result as string
         const imported = parseAndValidateImportedState(text)
         setConfig(imported)
-        setFormKey((k) => k + 1)
+        bumpFormKey()
         setResult(null)
         setHighlightedProcess(null)
         setResolveMsg(null)
@@ -126,11 +130,6 @@ function HomePage() {
 
   return (
     <div className="home">
-      <h1>Deadlock Detection System</h1>
-      <p className="subtitle">
-        Visualize and analyze deadlocks using the Banker's Algorithm and Resource Allocation Graphs
-      </p>
-
       <div className="sample-scenarios">
         {sampleScenarios.map((s, i) => (
           <button
@@ -148,7 +147,7 @@ function HomePage() {
       <SystemConfigForm
         key={formKey}
         onSave={handleSave}
-        highlightedProcess={highlightedProcess}
+        highlightedProcess={null}
         initialConfig={config}
       />
 
@@ -209,10 +208,6 @@ function HomePage() {
               resolveMsg={resolveMsg}
             />
           )}
-
-          <StepByStepView config={config} onHighlight={setHighlightedProcess} />
-
-          <RagGraph config={config} detectionResult={result} highlightedProcess={highlightedProcess} />
         </>
       )}
     </div>

@@ -1,0 +1,72 @@
+.app-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+  width: 100%;
+}
+
+.app-header {
+  padding: 1.5rem 0 1rem;
+  text-align: center;
+  border-bottom: 1px solid #333;
+  margin-bottom: 2rem;
+}
+
+.app-title {
+  font-size: 2.2em;
+  line-height: 1.1;
+  margin: 0 0 0.8rem 0;
+}
+
+.app-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.app-nav a {
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #aaa;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.app-nav a:hover {
+  color: #fff;
+  background: #2a2a3a;
+  border-color: #444;
+}
+
+.app-nav a.active {
+  color: #646cff;
+  border-color: #646cff;
+  background: rgba(100, 108, 255, 0.08);
+}
+
+.app-main {
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .app-header {
+    border-bottom-color: #ddd;
+  }
+  .app-nav a {
+    color: #666;
+  }
+  .app-nav a:hover {
+    color: #333;
+    background: #f0f0f0;
+    border-color: #ccc;
+  }
+  .app-nav a.active {
+    color: #646cff;
+    border-color: #646cff;
+    background: rgba(100, 108, 255, 0.06);
+  }
+}
