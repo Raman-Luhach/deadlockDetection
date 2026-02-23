@@ -3,6 +3,7 @@ import '../App.css'
 import SystemConfigForm from '../components/SystemConfigForm'
 import DetectionResultView from '../components/DetectionResultView'
 import RagGraph from '../components/RagGraph'
+import StepByStepView from '../components/StepByStepView'
 import { detectDeadlock } from '../services/api'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'
@@ -67,6 +68,8 @@ function HomePage() {
           </div>
 
           {result && <DetectionResultView result={result} />}
+
+          <StepByStepView config={config} />
 
           <RagGraph config={config} />
         </>

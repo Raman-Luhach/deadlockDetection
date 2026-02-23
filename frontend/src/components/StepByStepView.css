@@ -1,0 +1,145 @@
+.step-by-step {
+  margin-top: 2rem;
+  padding: 1.2rem 1.5rem;
+  border: 1px solid #444;
+  border-radius: 8px;
+  text-align: left;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step-by-step h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+.step-controls {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.step-btn {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95em;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.step-btn.start {
+  background: #4caf50;
+}
+
+.step-btn.start:hover {
+  background: #43a047;
+}
+
+.step-btn.next {
+  background: #646cff;
+}
+
+.step-btn.next:hover {
+  background: #535bf2;
+}
+
+.step-btn.reset {
+  background: #ff9800;
+}
+
+.step-btn.reset:hover {
+  background: #f57c00;
+}
+
+.step-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.step-log {
+  margin-top: 1rem;
+}
+
+.step-entry {
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  border-left: 3px solid #646cff;
+  background: rgba(100, 108, 255, 0.06);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.step-entry.found {
+  border-left-color: #4caf50;
+  background: rgba(76, 175, 80, 0.06);
+}
+
+.step-entry.done {
+  border-left-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.step-entry.deadlock {
+  border-left-color: #f44336;
+  background: rgba(244, 67, 54, 0.08);
+}
+
+.step-number {
+  font-weight: 700;
+  color: #7ec8e3;
+  margin-right: 0.4rem;
+}
+
+.step-sequence {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #333;
+}
+
+.step-sequence p {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.95em;
+  color: #aaa;
+}
+
+.step-error {
+  margin-top: 0.5rem;
+  color: #f44336;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .step-by-step {
+    border-color: #ddd;
+  }
+  .step-entry {
+    background: rgba(100, 108, 255, 0.04);
+  }
+  .step-entry.found {
+    background: rgba(76, 175, 80, 0.04);
+  }
+  .step-entry.done {
+    background: rgba(76, 175, 80, 0.08);
+  }
+  .step-entry.deadlock {
+    background: rgba(244, 67, 54, 0.06);
+  }
+  .step-number {
+    color: #1a237e;
+  }
+  .step-sequence p {
+    color: #666;
+  }
+  .step-sequence {
+    border-top-color: #ddd;
+  }
+}
