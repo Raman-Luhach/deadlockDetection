@@ -159,6 +159,44 @@
   outline-color: #e74c3c;
 }
 
+/* Highlighted row (step-by-step mode) */
+.matrix-table .row-highlighted {
+  background: rgba(255, 183, 77, 0.15);
+}
+
+.matrix-table .row-highlighted td {
+  border-top: 1px solid #ffb74d;
+  border-bottom: 1px solid #ffb74d;
+}
+
+.matrix-table .row-highlighted .row-label {
+  color: #ffb74d;
+}
+
+@media (prefers-color-scheme: light) {
+  .matrix-table .row-highlighted {
+    background: rgba(255, 152, 0, 0.12);
+  }
+  .matrix-table .row-highlighted td {
+    border-top-color: #ff9800;
+    border-bottom-color: #ff9800;
+  }
+  .matrix-table .row-highlighted .row-label {
+    color: #e65100;
+  }
+}
+
+/* Read-only matrix values */
+.matrix-value {
+  display: inline-block;
+  width: 52px;
+  text-align: center;
+  padding: 0.3em;
+  font-size: 0.95em;
+  font-family: monospace;
+  font-weight: 500;
+}
+
 /* Submit button */
 .submit-section {
   text-align: center;

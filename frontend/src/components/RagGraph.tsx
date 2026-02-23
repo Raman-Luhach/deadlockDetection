@@ -18,24 +18,15 @@ import './RagGraph.css'
 
 interface Props {
   config: SystemConfig
-  /** When present and is_deadlocked, process nodes in deadlocked_processes are highlighted. */
+  /** When present and is_deadlocked, process nodes in deadlocked_processes are highlighted red. */
   detectionResult?: DetectionResult | null
+  /** When set, the process node for this index is highlighted amber (step-by-step mode). */
+  highlightedProcess?: number | null
 }
 
-const deadlockedNodeStyle = {
-  background: '#b71c1c',
-  color: '#fff',
-  border: '3px solid #ff5252',
-  borderRadius: '50%',
-  width: 60,
-  height: 60,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontWeight: 700,
-}
+const HIGHLIGHT_COLOR = '#ffb74d'
 
-const normalProcessNodeStyle = {
+const normalProcessNodeStyle: React.CSSProperties = {
   background: '#1a237e',
   color: '#fff',
   border: '2px solid #7ec8e3',
@@ -48,19 +39,47 @@ const normalProcessNodeStyle = {
   fontWeight: 700,
 }
 
-function layoutNodes(ragData: RagData, deadlockedSet: Set<number>): Node[] {
+const deadlockedNodeStyle: React.CSSProperties = {
+  ...normalProcessNodeStyle,
+  background: '#b71c1c',
+  border: '3px solid #ff5252',
+}
+
+function getProcessNodeStyle(
+  isHighlighted: boolean,
+  isDeadlocked: boolean
+): React.CSSProperties {
+  if (isHighlighted) {
+    return {
+      ...normalProcessNodeStyle,
+      background: '#e65100',
+      border: `3px solid ${HIGHLIGHT_COLOR}`,
+      boxShadow: `0 0 12px ${HIGHLIGHT_COLOR}`,
+      transition: 'all 0.3s ease',
+    }
+  }
+  if (isDeadlocked) return deadlockedNodeStyle
+  return normalProcessNodeStyle
+}
+
+function layoutNodes(
+  ragData: RagData,
+  deadlockedSet: Set<number>,
+  highlightedProcess?: number | null
+): Node[] {
   const processNodes = ragData.nodes.filter((n) => n.type === 'process')
   const resourceNodes = ragData.nodes.filter((n) => n.type === 'resource')
 
   const nodes: Node[] = []
 
   processNodes.forEach((n, i) => {
+    const isHighlighted = highlightedProcess != null && n.id === highlightedProcess
     const isDeadlocked = deadlockedSet.has(n.id)
     nodes.push({
       id: String(n.id),
       position: { x: i * 140, y: 0 },
       data: { label: n.label },
-      style: isDeadlocked ? deadlockedNodeStyle : normalProcessNodeStyle,
+      style: getProcessNodeStyle(isHighlighted, isDeadlocked),
     })
   })
 
@@ -107,9 +126,10 @@ function buildEdges(ragData: RagData): Edge[] {
   }))
 }
 
-function RagGraph({ config, detectionResult }: Props) {
+function RagGraph({ config, detectionResult, highlightedProcess }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [ragData, setRagData] = useState<RagData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -125,15 +145,23 @@ function RagGraph({ config, detectionResult }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const ragData = await fetchRag(config)
-      setNodes(layoutNodes(ragData, deadlockedSet))
-      setEdges(buildEdges(ragData))
+      const data = await fetchRag(config)
+      setRagData(data)
+      setNodes(layoutNodes(data, deadlockedSet, highlightedProcess))
+      setEdges(buildEdges(data))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch RAG')
     } finally {
       setLoading(false)
     }
-  }, [config, setNodes, setEdges, deadlockedSet])
+  }, [config, setNodes, setEdges, deadlockedSet, highlightedProcess])
+
+  // Re-layout nodes when highlightedProcess or deadlockedSet changes (without re-fetching)
+  useEffect(() => {
+    if (ragData) {
+      setNodes(layoutNodes(ragData, deadlockedSet, highlightedProcess))
+    }
+  }, [highlightedProcess, deadlockedSet, ragData, setNodes])
 
   useEffect(() => {
     loadRag()
@@ -154,10 +182,10 @@ function RagGraph({ config, detectionResult }: Props) {
           <span className="legend-circle deadlocked-legend" /> Deadlocked process
         </span>
         <span className="legend-item" title="Process waits for resource">
-          <span className="legend-line request-legend" /> Request (P → R)
+          <span className="legend-line request-legend" /> Request (P &rarr; R)
         </span>
         <span className="legend-item" title="Resource allocated to process">
-          <span className="legend-line assignment-legend" /> Assignment (R → P)
+          <span className="legend-line assignment-legend" /> Assignment (R &rarr; P)
         </span>
       </div>
 

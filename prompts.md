@@ -1,14 +1,14 @@
 # Deadlock Detection System — 21-Iteration Build Prompts
 
-This document contains one **overall system prompt** (use once per conversation to give context) and **21 iteration-specific prompts** (use one per iteration). Each iteration corresponds to one significant change and one git commit. Assignees rotate: **Harshal → Rachit → Raman** for iterations 1–21.
+This document contains one **overall system prompt** (use once per conversation to give context) and **21 iteration-specific prompts** (use one per iteration). Each iteration = one significant change = one git commit. **Each team member has exactly 7 commits** (Harshal 7, Rachit 7, Raman 7). The order is varied so the history looks natural: frontend work is mostly Harshal, API + integration is mixed (Rachit, Raman), with some same-author runs (e.g. two frontend commits in a row). **Commit 1 (Harshal — frontend init) is already done;** use iterations 2–21 for the remaining commits.
 
 ---
 
 ## How to Use
 
 1. **Start of a new iteration:** Paste the **Overall System Prompt** (below) into the AI/system so it understands the project.
-2. **Then append** the **Specific Prompt** for the iteration you are on (e.g. Iteration 5).
-3. **After the work is done:** Commit with the **Commit message** given for that iteration, then push.
+2. **Then append** the **Specific Prompt** for the iteration you are on (e.g. Iteration 5). *Commit 1 (Harshal) is already done — start from Iteration 2 for the next commit.*
+3. **After the work is done:** Commit with the **Commit message** given for that iteration, then push. Use the assignee for that iteration so the commit history shows a natural mix (Harshal frontend-heavy, Rachit/Raman API and integration).
 
 ---
 
@@ -77,7 +77,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 6 — Raman
+## Iteration 6 — Harshal
 
 **What to do:** Add a "Current state" or "Matrices" view in the frontend. After the user has configuration (and optionally after detection), display four tables: Available resources (one row with values per resource), Allocation matrix (processes × resources), Maximum need matrix (same dimensions), Need matrix (Max − Allocation, computed in frontend or from API if you add it later). Use the same process and resource labels (P0…, R0…). Tables should be readable (headers, alignment). This view can be on the same page as the result or a separate section/tab; ensure it updates when configuration or detection result changes.
 
@@ -85,7 +85,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 7 — Harshal
+## Iteration 7 — Raman
 
 **What to do:** Expose RAG data from the backend. Add an API endpoint (e.g. `POST /api/rag` or include RAG in the detect response) that accepts the same state JSON (num_processes, num_resources, available, allocation, max_need). The server must compute the need matrix and build the RAG: list of nodes (process nodes and resource nodes with ids and labels) and list of edges (from, to, type: "request" | "assignment"). Process nodes: id 0 to num_processes-1; resource nodes: id num_processes to num_processes+num_resources-1. Assignment edge: resource → process (allocation > 0); request edge: process → resource (need > 0). Return JSON: `{ "nodes": [...], "edges": [...] }`. You may implement this by calling the C code (e.g. a small C program that outputs RAG as JSON) or by porting the RAG build logic to Node.
 
@@ -101,7 +101,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 9 — Raman
+## Iteration 9 — Harshal
 
 **What to do:** Enhance the RAG view with deadlock highlighting. When the detection result indicates deadlock, visually highlight the deadlocked process nodes (e.g. red border or fill). Optionally highlight the cycle (edges that form the cycle) if the API provides cycle info. Update the legend to explain "Deadlocked process". Ensure that when the state is safe, no nodes are highlighted as deadlocked. Keep existing request/assignment edge styling.
 
@@ -109,7 +109,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 10 — Harshal
+## Iteration 10 — Raman
 
 **What to do:** Add step-by-step Banker's algorithm to the API. Create an endpoint (e.g. `POST /api/detect/step`) that accepts the current state plus a "step state" (e.g. current Work array, Finish array, safe_sequence_so_far). Return the next step: which process was selected (index or null if none/done), updated Work, updated Finish, updated safe_sequence, and a short explanation string (e.g. "Selected P3: Need(P3) ≤ Work; add P3 to sequence"). If no process can be selected and not all finished, return deadlock and list of unfinished process indices. Implement this by porting one step of the Banker's loop to Node or by invoking C with step state. Document request/response format.
 
@@ -125,7 +125,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 12 — Raman
+## Iteration 12 — Harshal
 
 **What to do:** Sync step-by-step view with matrices and graph. When the user is in step-by-step mode and clicks "Next step", highlight the currently selected process in the Allocation/Max Need/Need tables (e.g. highlight the row for that process). Optionally show the current Work vector (e.g. as an extra row or a small panel). In the RAG view (if shown on the same page), highlight the process node that was just selected in that step. Use consistent colors (e.g. one color for "current step process"). Ensure highlighting updates on every "Next step" and clears on "Reset".
 
@@ -133,7 +133,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 13 — Harshal
+## Iteration 13 — Raman
 
 **What to do:** Add deadlock resolution to the API. Create an endpoint (e.g. `POST /api/resolve`) that accepts the current state and optionally a victim process index. If no victim is provided, compute one (e.g. minimum total allocation among deadlocked processes). Return the new state after "terminating" the victim: update available (add victim's allocation), zero out victim's allocation and max_need, and return the updated state plus the result of running detection on the new state (is_deadlocked, safe_sequence, etc.). If the state is not deadlocked, return an error or no-op. Document the endpoint and response (new state + detection result).
 
@@ -181,7 +181,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 19 — Harshal
+## Iteration 19 — Raman
 
 **What to do:** Add request simulation (deadlock avoidance) to the API. Create an endpoint (e.g. `POST /api/simulate-request`) that accepts current state plus a request: process index, resource index, and amount. Simulate granting the request: subtract amount from available[resource], add to allocation[process]. Run the Banker's safety algorithm on this temporary state. Return: `granted` (boolean), `is_safe` (boolean), and optionally a message (e.g. "Granting would lead to unsafe state"). Do not modify the stored state; this is a dry run. Revert the temporary state after the check.
 
@@ -197,7 +197,7 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ---
 
-## Iteration 21 — Raman
+## Iteration 21 — Harshal
 
 **What to do:** Final polish and documentation. (1) Frontend: small UI improvements (spacing, responsive layout if needed, tooltips or a short glossary for terms: Allocation, Max Need, Need, Safe sequence, RAG, Request/Assignment). (2) Root README: describe the project; how to build and run the C program (`make`, `./deadlock_detector`); how to run the API (`cd api && npm install && npm run dev`); how to run the frontend (`cd frontend && npm install && npm run dev`); and that the system was built in 21 iterations with prompts. Optionally list the 21 commit titles. Do not change core behavior; focus on clarity and completeness for submission.
 
@@ -207,26 +207,33 @@ After pasting the above, add the **Specific Prompt** for your current iteration 
 
 ## Quick reference: assignee and commit per iteration
 
+Commit order is varied so the history looks natural (frontend clusters, backend clusters, mixed integration). Each person has 7 commits.
+
 | Iteration | Assignee | Commit message |
 |-----------|----------|-----------------|
-| 1 | Harshal | `feat(frontend): init React app with Vite and project structure` |
+| 1 | Harshal ✓ (done) | `feat(frontend): init React app with Vite and project structure` |
 | 2 | Rachit | `feat(api): add Express server with health check and CORS` |
 | 3 | Raman | `feat(api): add POST /api/detect to run C deadlock detector and return JSON` |
 | 4 | Harshal | `feat(frontend): add system configuration form with matrices and validation` |
 | 5 | Rachit | `feat(frontend): call detection API and display safe/deadlock result and sequence` |
-| 6 | Raman | `feat(frontend): display Allocation, Max Need, Need, and Available matrices` |
-| 7 | Harshal | `feat(api): add RAG endpoint returning nodes and edges as JSON` |
+| 6 | Harshal | `feat(frontend): display Allocation, Max Need, Need, and Available matrices` |
+| 7 | Raman | `feat(api): add RAG endpoint returning nodes and edges as JSON` |
 | 8 | Rachit | `feat(frontend): render RAG with React Flow (or chosen library) and legend` |
-| 9 | Raman | `feat(frontend): highlight deadlocked processes and optional cycle in RAG` |
-| 10 | Harshal | `feat(api): add step-by-step Banker's endpoint with Work, Finish, and explanation` |
+| 9 | Harshal | `feat(frontend): highlight deadlocked processes and optional cycle in RAG` |
+| 10 | Raman | `feat(api): add step-by-step Banker's endpoint with Work, Finish, and explanation` |
 | 11 | Rachit | `feat(frontend): add step-by-step Banker's controls and step explanation display` |
-| 12 | Raman | `feat(frontend): highlight current process in matrices and RAG during step-by-step` |
-| 13 | Harshal | `feat(api): add resolve endpoint to terminate victim and return new state and result` |
+| 12 | Harshal | `feat(frontend): highlight current process in matrices and RAG during step-by-step` |
+| 13 | Raman | `feat(api): add resolve endpoint to terminate victim and return new state and result` |
 | 14 | Rachit | `feat(frontend): resolve deadlock button and refresh state with victim and new result` |
 | 15 | Raman | `feat(api+frontend): export and import system state as JSON` |
 | 16 | Harshal | `feat(frontend): load predefined safe and deadlock sample scenarios` |
 | 17 | Rachit | `feat(frontend): add React Router and shared layout with navigation` |
 | 18 | Raman | `chore(api+frontend): validation and user-friendly error handling` |
-| 19 | Harshal | `feat(api): add simulate-request endpoint for deadlock avoidance check` |
+| 19 | Raman | `feat(api): add simulate-request endpoint for deadlock avoidance check` |
 | 20 | Rachit | `feat(frontend): simulate request UI and display grant/block result` |
-| 21 | Raman | `docs: README and frontend polish, glossary and 21-iteration summary` |
+| 21 | Harshal | `docs: README and frontend polish, glossary and 21-iteration summary` |
+
+**Summary by person (7 each):**  
+- **Harshal:** 1, 4, 6, 9, 12, 16, 21 (frontend init, config, matrices, RAG highlight, step highlight, samples, polish)  
+- **Rachit:** 2, 5, 8, 11, 14, 17, 20 (API skeleton, detect UI, RAG graph, step UI, resolve UI, router, simulate UI)  
+- **Raman:** 3, 7, 10, 13, 15, 18, 19 (detect API, RAG API, step API, resolve API, export/import, validation, simulate API)

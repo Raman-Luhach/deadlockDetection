@@ -2,8 +2,8 @@ import { useState } from 'react'
 import '../App.css'
 import SystemConfigForm from '../components/SystemConfigForm'
 import DetectionResultView from '../components/DetectionResultView'
-import RagGraph from '../components/RagGraph'
 import StepByStepView from '../components/StepByStepView'
+import RagGraph from '../components/RagGraph'
 import { detectDeadlock } from '../services/api'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'
@@ -13,12 +13,14 @@ function HomePage() {
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [highlightedProcess, setHighlightedProcess] = useState<number | null>(null)
 
   const handleDetect = async () => {
     if (!config) return
     setLoading(true)
     setError(null)
     setResult(null)
+    setHighlightedProcess(null)
     try {
       const res = await detectDeadlock(config)
       setResult(res)
@@ -33,6 +35,7 @@ function HomePage() {
     setConfig(cfg)
     setResult(null)
     setError(null)
+    setHighlightedProcess(null)
   }
 
   return (
@@ -42,7 +45,7 @@ function HomePage() {
         Visualize and analyze deadlocks using the Banker's Algorithm and Resource Allocation Graphs
       </p>
 
-      <SystemConfigForm onSave={handleSave} />
+      <SystemConfigForm onSave={handleSave} highlightedProcess={highlightedProcess} />
 
       {config && (
         <>
@@ -69,9 +72,9 @@ function HomePage() {
 
           {result && <DetectionResultView result={result} />}
 
-          <StepByStepView config={config} />
+          <StepByStepView config={config} onHighlight={setHighlightedProcess} />
 
-          <RagGraph config={config} detectionResult={result} />
+          <RagGraph config={config} detectionResult={result} highlightedProcess={highlightedProcess} />
         </>
       )}
     </div>

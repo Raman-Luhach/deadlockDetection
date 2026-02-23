@@ -4,9 +4,10 @@ import './SystemConfigForm.css'
 
 interface Props {
   onSave: (config: SystemConfig) => void
+  highlightedProcess?: number | null
 }
 
-function SystemConfigForm({ onSave }: Props) {
+function SystemConfigForm({ onSave, highlightedProcess }: Props) {
   const [numProcesses, setNumProcesses] = useState(3)
   const [numResources, setNumResources] = useState(3)
   const [available, setAvailable] = useState<number[]>([0, 0, 0])
@@ -198,6 +199,7 @@ function SystemConfigForm({ onSave }: Props) {
           processLabels={processLabels}
           resourceLabels={resourceLabels}
           maxNeed={null}
+          highlightedRow={highlightedProcess}
           onChange={(r, c, v) => handleMatrixChange('allocation', r, c, v)}
         />
       </div>
@@ -210,6 +212,7 @@ function SystemConfigForm({ onSave }: Props) {
           processLabels={processLabels}
           resourceLabels={resourceLabels}
           maxNeed={null}
+          highlightedRow={highlightedProcess}
           onChange={(r, c, v) => handleMatrixChange('maxNeed', r, c, v)}
         />
       </div>
@@ -259,7 +262,9 @@ interface MatrixGridProps {
   processLabels: string[]
   resourceLabels: string[]
   maxNeed: number[][] | null
-  onChange: (row: number, col: number, val: string) => void
+  highlightedRow?: number | null
+  readOnly?: boolean
+  onChange?: (row: number, col: number, val: string) => void
 }
 
 function MatrixGrid({
@@ -267,6 +272,8 @@ function MatrixGrid({
   processLabels,
   resourceLabels,
   maxNeed,
+  highlightedRow,
+  readOnly,
   onChange,
 }: MatrixGridProps) {
   return (
@@ -280,29 +287,38 @@ function MatrixGrid({
         </tr>
       </thead>
       <tbody>
-        {processLabels.map((pLabel, i) => (
-          <tr key={pLabel}>
-            <td className="row-label">{pLabel}</td>
-            {resourceLabels.map((_, j) => {
-              const hasError =
-                maxNeed !== null && maxNeed[i][j] < matrix[i][j]
-              return (
-                <td key={j}>
-                  <input
-                    type="number"
-                    min={0}
-                    value={matrix[i][j]}
-                    className={hasError ? 'input-error' : ''}
-                    onChange={(e) => onChange(i, j, e.target.value)}
-                  />
-                </td>
-              )
-            })}
-          </tr>
-        ))}
+        {processLabels.map((pLabel, i) => {
+          const isHighlighted = highlightedRow != null && highlightedRow === i
+          return (
+            <tr key={pLabel} className={isHighlighted ? 'row-highlighted' : ''}>
+              <td className="row-label">{pLabel}</td>
+              {resourceLabels.map((_, j) => {
+                const hasError =
+                  maxNeed !== null && maxNeed[i][j] < matrix[i][j]
+                return (
+                  <td key={j}>
+                    {readOnly ? (
+                      <span className="matrix-value">{matrix[i][j]}</span>
+                    ) : (
+                      <input
+                        type="number"
+                        min={0}
+                        value={matrix[i][j]}
+                        className={hasError ? 'input-error' : ''}
+                        onChange={(e) => onChange?.(i, j, e.target.value)}
+                      />
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )
 }
+
+export { MatrixGrid }
 
 export default SystemConfigForm

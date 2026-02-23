@@ -29,9 +29,9 @@ export async function detectDeadlock(config: SystemConfig): Promise<DetectionRes
   return res.json()
 }
 
-export async function detectStep(
+export async function detectDeadlockStep(
   config: SystemConfig,
-  stepState: StepState | null,
+  stepState: StepState | null
 ): Promise<StepResponse> {
   const res = await fetch(`${API_BASE}/api/detect/step`, {
     method: 'POST',
