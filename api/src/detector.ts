@@ -76,6 +76,190 @@ export function detectDeadlock(req: DetectRequest): DetectResponse {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/*  Step-by-step Banker's Algorithm                                    */
+/* ------------------------------------------------------------------ */
+
+export interface StepRequest {
+  /** Full system state (always required so we can compute the need matrix). */
+  num_processes: number;
+  num_resources: number;
+  available: number[];
+  allocation: number[][];
+  max_need: number[][];
+
+  /**
+   * Optional step state.  Omit (or set to null) to start from the beginning.
+   * If provided, the algorithm resumes from this snapshot.
+   */
+  step_state?: {
+    work: number[];
+    finish: boolean[];
+    safe_sequence: number[];
+  } | null;
+}
+
+export interface StepResponse {
+  /** "found" = a process was selected; "done" = all finished; "deadlock" = stuck. */
+  status: 'found' | 'done' | 'deadlock';
+
+  /** Index of the process selected in this step, or null if none. */
+  selected_process: number | null;
+
+  /** Human-readable explanation of what happened. */
+  explanation: string;
+
+  /** Updated step state to feed into the next call. */
+  step_state: {
+    work: number[];
+    finish: boolean[];
+    safe_sequence: number[];
+  };
+
+  /** Present only when status is "deadlock". */
+  deadlocked_processes?: number[];
+}
+
+/**
+ * Executes ONE iteration of the Banker's safety loop.
+ *
+ * Scans all processes (in index order) for the first unfinished process whose
+ * Need ≤ Work.  If found, simulates releasing its resources.
+ * If no such process exists, reports either completion or deadlock.
+ */
+export function detectDeadlockStep(req: StepRequest): StepResponse {
+  const { num_processes, num_resources, allocation, max_need } = req;
+
+  // Compute need matrix
+  const need: number[][] = [];
+  for (let i = 0; i < num_processes; i++) {
+    need[i] = [];
+    for (let j = 0; j < num_resources; j++) {
+      need[i][j] = max_need[i][j] - allocation[i][j];
+    }
+  }
+
+  // Initialise or restore step state
+  const work: number[] = req.step_state
+    ? [...req.step_state.work]
+    : [...req.available];
+  const finish: boolean[] = req.step_state
+    ? [...req.step_state.finish]
+    : new Array(num_processes).fill(false);
+  const safeSeq: number[] = req.step_state
+    ? [...req.step_state.safe_sequence]
+    : [];
+
+  // Try to find one satisfiable process
+  for (let i = 0; i < num_processes; i++) {
+    if (!finish[i] && canSatisfy(need[i], work, num_resources)) {
+      // Simulate: release allocation[i] into work
+      for (let j = 0; j < num_resources; j++) {
+        work[j] += allocation[i][j];
+      }
+      finish[i] = true;
+      safeSeq.push(i);
+
+      const needStr = `[${need[i].join(', ')}]`;
+      const workBefore = work.map((w, j) => w - allocation[i][j]);
+      const workStr = `[${workBefore.join(', ')}]`;
+
+      return {
+        status: 'found',
+        selected_process: i,
+        explanation:
+          `Selected P${i}: Need(P${i}) ${needStr} ≤ Work ${workStr}; ` +
+          `allocate resources, then release → Work = [${work.join(', ')}]. ` +
+          `Add P${i} to safe sequence.`,
+        step_state: { work, finish, safe_sequence: safeSeq },
+      };
+    }
+  }
+
+  // No process was selected — check if we're done or deadlocked
+  const unfinished: number[] = [];
+  for (let i = 0; i < num_processes; i++) {
+    if (!finish[i]) unfinished.push(i);
+  }
+
+  if (unfinished.length === 0) {
+    return {
+      status: 'done',
+      selected_process: null,
+      explanation:
+        `All processes finished. Safe sequence: [${safeSeq.map((p) => `P${p}`).join(', ')}].`,
+      step_state: { work, finish, safe_sequence: safeSeq },
+    };
+  }
+
+  return {
+    status: 'deadlock',
+    selected_process: null,
+    explanation:
+      `No process can be satisfied. ` +
+      `Deadlocked processes: [${unfinished.map((p) => `P${p}`).join(', ')}]. ` +
+      `Work = [${work.join(', ')}].`,
+    step_state: { work, finish, safe_sequence: safeSeq },
+    deadlocked_processes: unfinished,
+  };
+}
+
+/**
+ * Validates the step_state portion of a StepRequest.
+ * Returns an error message or null if valid.
+ */
+export function validateStepRequest(body: unknown): string | null {
+  // First validate the base system state fields
+  const baseError = validateDetectRequest(body);
+  if (baseError) return baseError;
+
+  const b = body as Record<string, unknown>;
+  const np = b.num_processes as number;
+  const nr = b.num_resources as number;
+
+  // step_state is optional — if absent or null, that's fine (start from scratch)
+  if (b.step_state === undefined || b.step_state === null) return null;
+
+  if (typeof b.step_state !== 'object') {
+    return 'step_state must be an object or null';
+  }
+
+  const ss = b.step_state as Record<string, unknown>;
+
+  // work
+  if (!Array.isArray(ss.work) || ss.work.length !== nr) {
+    return `step_state.work must be an array of ${nr} numbers`;
+  }
+  for (let j = 0; j < nr; j++) {
+    if (typeof ss.work[j] !== 'number' || ss.work[j] < 0) {
+      return `step_state.work[${j}] must be a non-negative number`;
+    }
+  }
+
+  // finish
+  if (!Array.isArray(ss.finish) || ss.finish.length !== np) {
+    return `step_state.finish must be an array of ${np} booleans`;
+  }
+  for (let i = 0; i < np; i++) {
+    if (typeof ss.finish[i] !== 'boolean') {
+      return `step_state.finish[${i}] must be a boolean`;
+    }
+  }
+
+  // safe_sequence
+  if (!Array.isArray(ss.safe_sequence)) {
+    return 'step_state.safe_sequence must be an array of numbers';
+  }
+  for (let k = 0; k < ss.safe_sequence.length; k++) {
+    const v = ss.safe_sequence[k];
+    if (typeof v !== 'number' || v < 0 || v >= np) {
+      return `step_state.safe_sequence[${k}] must be a process index (0..${np - 1})`;
+    }
+  }
+
+  return null;
+}
+
 /**
  * Validates request body for POST /api/detect.
  * Returns an error message or null if valid.

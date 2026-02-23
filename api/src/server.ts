@@ -1,6 +1,13 @@
 import express from 'express';
 import cors from 'cors';
-import { detectDeadlock, validateDetectRequest, type DetectRequest } from './detector';
+import {
+  detectDeadlock,
+  validateDetectRequest,
+  validateStepRequest,
+  detectDeadlockStep,
+  type DetectRequest,
+  type StepRequest,
+} from './detector';
 import { buildRag, type RagRequest } from './rag';
 
 const app = express();
@@ -47,6 +54,34 @@ app.post('/api/detect', (req, res) => {
     return;
   }
   const result = detectDeadlock(req.body as DetectRequest);
+  res.json(result);
+});
+
+/**
+ * POST /api/detect/step
+ * Executes one step of the Banker's safety algorithm.
+ *
+ * Request body (JSON):
+ *   - num_processes, num_resources, available, allocation, max_need: same as /api/detect
+ *   - step_state (optional, omit or null to start):
+ *       - work: number[]            current Work vector
+ *       - finish: boolean[]         which processes have finished
+ *       - safe_sequence: number[]   processes added to the safe sequence so far
+ *
+ * Response (JSON):
+ *   - status: "found" | "done" | "deadlock"
+ *   - selected_process: number | null
+ *   - explanation: string
+ *   - step_state: { work, finish, safe_sequence }   (pass back in the next call)
+ *   - deadlocked_processes?: number[]                (only when status = "deadlock")
+ */
+app.post('/api/detect/step', (req, res) => {
+  const validationError = validateStepRequest(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  const result = detectDeadlockStep(req.body as StepRequest);
   res.json(result);
 });
 
