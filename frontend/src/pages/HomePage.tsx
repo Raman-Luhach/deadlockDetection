@@ -4,7 +4,7 @@ import SystemConfigForm from '../components/SystemConfigForm'
 import DetectionResultView from '../components/DetectionResultView'
 import StepByStepView from '../components/StepByStepView'
 import RagGraph from '../components/RagGraph'
-import { detectDeadlock } from '../services/api'
+import { detectDeadlock, resolveDeadlock } from '../services/api'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'
 
@@ -14,6 +14,8 @@ function HomePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [highlightedProcess, setHighlightedProcess] = useState<number | null>(null)
+  const [resolving, setResolving] = useState(false)
+  const [resolveMsg, setResolveMsg] = useState<string | null>(null)
 
   const handleDetect = async () => {
     if (!config) return
@@ -21,6 +23,7 @@ function HomePage() {
     setError(null)
     setResult(null)
     setHighlightedProcess(null)
+    setResolveMsg(null)
     try {
       const res = await detectDeadlock(config)
       setResult(res)
@@ -31,11 +34,41 @@ function HomePage() {
     }
   }
 
+  const handleResolve = async () => {
+    if (!config) return
+    setResolving(true)
+    setError(null)
+    setResolveMsg(null)
+    try {
+      const res = await resolveDeadlock(config)
+      const updatedConfig: SystemConfig = {
+        numProcesses: res.state.num_processes,
+        numResources: res.state.num_resources,
+        available: res.state.available,
+        allocation: res.state.allocation,
+        maxNeed: res.state.max_need,
+      }
+      setConfig(updatedConfig)
+      setResult(res.result)
+      setResolveMsg(
+        `Terminated P${res.victim_process} — resources released. ` +
+        (res.result.is_deadlocked
+          ? 'System is still deadlocked.'
+          : `System is now safe. Sequence: ${res.result.safe_sequence.map(p => `P${p}`).join(' → ')}`)
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resolve deadlock')
+    } finally {
+      setResolving(false)
+    }
+  }
+
   const handleSave = (cfg: SystemConfig) => {
     setConfig(cfg)
     setResult(null)
     setError(null)
     setHighlightedProcess(null)
+    setResolveMsg(null)
   }
 
   return (
@@ -70,7 +103,14 @@ function HomePage() {
             {error && <p className="detect-error">{error}</p>}
           </div>
 
-          {result && <DetectionResultView result={result} />}
+          {result && (
+            <DetectionResultView
+              result={result}
+              onResolve={result.is_deadlocked ? handleResolve : undefined}
+              resolving={resolving}
+              resolveMsg={resolveMsg}
+            />
+          )}
 
           <StepByStepView config={config} onHighlight={setHighlightedProcess} />
 

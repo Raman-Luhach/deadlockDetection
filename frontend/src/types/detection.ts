@@ -18,3 +18,15 @@ export interface StepResponse {
   step_state: StepState
   deadlocked_processes?: number[]
 }
+
+export interface ResolveResponse {
+  state: {
+    num_processes: number
+    num_resources: number
+    available: number[]
+    allocation: number[][]
+    max_need: number[][]
+  }
+  result: DetectionResult
+  victim_process: number
+}

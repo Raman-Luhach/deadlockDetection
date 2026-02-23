@@ -3,9 +3,12 @@ import './DetectionResultView.css'
 
 interface Props {
   result: DetectionResult
+  onResolve?: () => void
+  resolving?: boolean
+  resolveMsg?: string | null
 }
 
-function DetectionResultView({ result }: Props) {
+function DetectionResultView({ result, onResolve, resolving, resolveMsg }: Props) {
   return (
     <div className={`detection-result ${result.is_deadlocked ? 'deadlocked' : 'safe'}`}>
       <h3>{result.is_deadlocked ? 'Deadlock Detected' : 'System is Safe'}</h3>
@@ -45,6 +48,24 @@ function DetectionResultView({ result }: Props) {
               </div>
             </div>
           )}
+
+          {onResolve && (
+            <div className="resolve-section">
+              <button
+                className="resolve-btn"
+                onClick={onResolve}
+                disabled={resolving}
+              >
+                {resolving ? 'Resolving...' : 'Resolve Deadlock'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {resolveMsg && (
+        <div className={`resolve-msg ${result.is_deadlocked ? 'still-deadlocked' : 'resolved'}`}>
+          {resolveMsg}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import type { SystemConfig } from '../types/system'
-import type { DetectionResult, StepState, StepResponse } from '../types/detection'
+import type { DetectionResult, StepState, StepResponse, ResolveResponse } from '../types/detection'
 import type { RagData } from '../types/rag'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -40,6 +40,21 @@ export async function detectDeadlockStep(
       ...configToPayload(config),
       step_state: stepState,
     }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(err.error || `API error: ${res.status}`)
+  }
+
+  return res.json()
+}
+
+export async function resolveDeadlock(config: SystemConfig): Promise<ResolveResponse> {
+  const res = await fetch(`${API_BASE}/api/resolve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(configToPayload(config)),
   })
 
   if (!res.ok) {

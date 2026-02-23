@@ -40,6 +40,42 @@
   font-family: monospace;
 }
 
+.resolve-section {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.resolve-btn {
+  padding: 0.6rem 1.5rem;
+  font-size: 1em;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #f44336;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.resolve-btn:hover {
+  background: #d32f2f;
+}
+
+.resolve-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.resolve-msg {
+  margin-top: 0.8rem;
+  font-size: 0.95em;
+  color: #4caf50;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 @media (prefers-color-scheme: light) {
   .config-preview {
     border-color: #ddd;
