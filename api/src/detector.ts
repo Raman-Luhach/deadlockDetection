@@ -365,6 +365,117 @@ export function validateStepRequest(body: unknown): string | null {
   return null;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Request simulation (deadlock avoidance)                            */
+/* ------------------------------------------------------------------ */
+
+export interface SimulateRequest extends DetectRequest {
+  process_index: number;
+  resource_index: number;
+  amount: number;
+}
+
+export interface SimulateResponse {
+  granted: boolean;
+  is_safe: boolean;
+  message: string;
+}
+
+/**
+ * Simulates granting a resource request without modifying the given state.
+ * If the resulting state is safe, granted = true; otherwise granted = false.
+ * This is a dry run (no state is stored or changed).
+ */
+export function simulateRequest(req: SimulateRequest): SimulateResponse {
+  const { num_processes, num_resources, available, allocation, max_need, process_index: pi, resource_index: rj, amount } = req;
+
+  if (amount <= 0) {
+    return { granted: false, is_safe: false, message: 'Amount must be positive.' };
+  }
+  if (available[rj] < amount) {
+    return {
+      granted: false,
+      is_safe: false,
+      message: `Cannot grant: only ${available[rj]} units of R${rj} available, requested ${amount}.`,
+    };
+  }
+  const newAlloc = allocation[pi][rj] + amount;
+  if (newAlloc > max_need[pi][rj]) {
+    return {
+      granted: false,
+      is_safe: false,
+      message: `Request exceeds max need: P${pi} max need for R${rj} is ${max_need[pi][rj]}, would become ${newAlloc}.`,
+    };
+  }
+
+  // Build temporary state (copy)
+  const newAvailable = available.map((a, j) => (j === rj ? a - amount : a));
+  const newAllocation = allocation.map((row, i) =>
+    i === pi ? row.map((v, j) => (j === rj ? v + amount : v)) : [...row]
+  );
+
+  const tempState: DetectRequest = {
+    num_processes,
+    num_resources,
+    available: newAvailable,
+    allocation: newAllocation,
+    max_need,
+  };
+
+  const result = detectDeadlock(tempState);
+  const is_safe = !result.is_deadlocked;
+
+  if (is_safe) {
+    return {
+      granted: true,
+      is_safe: true,
+      message: `Granting ${amount} unit(s) of R${rj} to P${pi} would leave the system in a safe state.`,
+    };
+  }
+  return {
+    granted: false,
+    is_safe: false,
+    message: 'Granting would lead to unsafe state (deadlock possible).',
+  };
+}
+
+/**
+ * Validates request body for POST /api/simulate-request.
+ */
+export function validateSimulateRequest(body: unknown): string | null {
+  const baseError = validateDetectRequest(body);
+  if (baseError) return baseError;
+
+  const b = body as Record<string, unknown>;
+  const np = b.num_processes as number;
+  const nr = b.num_resources as number;
+  const available = b.available as number[];
+  const allocation = b.allocation as number[][];
+  const max_need = b.max_need as number[][];
+
+  if (typeof b.process_index !== 'number' || !Number.isInteger(b.process_index) || b.process_index < 0 || b.process_index >= np) {
+    return `process_index must be an integer between 0 and ${np - 1}`;
+  }
+  if (typeof b.resource_index !== 'number' || !Number.isInteger(b.resource_index) || b.resource_index < 0 || b.resource_index >= nr) {
+    return `resource_index must be an integer between 0 and ${nr - 1}`;
+  }
+  if (typeof b.amount !== 'number' || !Number.isInteger(b.amount) || b.amount < 1) {
+    return 'amount must be a positive integer';
+  }
+
+  const pi = b.process_index as number;
+  const rj = b.resource_index as number;
+  const amount = b.amount as number;
+  if (available[rj] < amount) {
+    return `Requested amount ${amount} exceeds available for R${rj} (${available[rj]})`;
+  }
+  if (allocation[pi][rj] + amount > max_need[pi][rj]) {
+    return `Request would exceed P${pi}'s max need for R${rj}`;
+  }
+
+  return null;
+}
+
 /**
  * Validates request body for POST /api/detect.
  * Returns an error message or null if valid.

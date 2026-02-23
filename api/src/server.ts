@@ -5,11 +5,14 @@ import {
   validateDetectRequest,
   validateStepRequest,
   validateResolveRequest,
+  validateSimulateRequest,
   detectDeadlockStep,
   resolveDeadlock,
+  simulateRequest,
   type DetectRequest,
   type StepRequest,
   type ResolveRequest,
+  type SimulateRequest,
 } from './detector';
 import { buildRag, type RagRequest } from './rag';
 
@@ -144,8 +147,24 @@ app.post('/api/resolve', (req, res) => {
 });
 
 /**
+ * POST /api/simulate-request
+ * Deadlock avoidance: simulates granting a resource request without changing state.
+ * Request body: same as /api/detect plus process_index, resource_index, amount.
+ * Response: granted, is_safe, message. Dry run only.
+ */
+app.post('/api/simulate-request', (req, res) => {
+  const validationError = validateSimulateRequest(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
+    return;
+  }
+  const result = simulateRequest(req.body as SimulateRequest);
+  res.json(result);
+});
+
+/**
  * POST /api/rag
- * Builds a Resource Allocation Graph from the given system state.
+ * Builds the Resource Allocation Graph from the given system state.
  *
  * Request body: same as /api/detect.
  *

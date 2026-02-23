@@ -168,6 +168,27 @@ Resolves deadlock by terminating one process (victim). The victim’s allocation
 
 Returns `400` with `{ "error": "message" }` if the current state is not deadlocked or if `victim_process_index` is not a valid deadlocked process index.
 
+### `POST /api/simulate-request`
+
+Deadlock avoidance: simulates granting a single resource request **without changing any stored state** (dry run). Applies the request to a temporary copy (subtracts `amount` from `available[resource_index]`, adds to `allocation[process_index][resource_index]`), runs the Banker's safety algorithm on that state, then discards the copy.
+
+**Request body (JSON):**
+
+- Same as `POST /api/detect`: `num_processes`, `num_resources`, `available`, `allocation`, `max_need`.
+- **`process_index`**: number (0..num_processes-1).
+- **`resource_index`**: number (0..num_resources-1).
+- **`amount`**: positive integer (requested units of the resource).
+
+**Response (JSON):**
+
+| Field     | Type    | Description |
+|----------|---------|-------------|
+| `granted` | boolean | `true` if granting the request would leave the system in a safe state |
+| `is_safe` | boolean | Same as `granted` |
+| `message` | string  | Short explanation (e.g. "Granting would lead to unsafe state") |
+
+Returns `400` with `{ "error": "message" }` for invalid or infeasible requests (e.g. amount &gt; available, amount &gt; remaining need, or invalid indices).
+
 ### `POST /api/rag`
 
 Builds the Resource Allocation Graph (RAG) for the given system state. Request body is the same as `POST /api/detect`.
