@@ -1,5 +1,5 @@
 import type { SystemConfig } from '../types/system'
-import type { DetectionResult, StepState, StepResponse, ResolveResponse } from '../types/detection'
+import type { DetectionResult, StepState, StepResponse, ResolveResponse, SimulateResponse } from '../types/detection'
 import type { RagData } from '../types/rag'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -181,6 +181,24 @@ export async function resolveDeadlock(config: SystemConfig): Promise<ResolveResp
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configToPayload(config)),
+  })
+}
+
+export async function simulateResourceRequest(
+  config: SystemConfig,
+  processIndex: number,
+  resourceIndex: number,
+  amount: number,
+): Promise<SimulateResponse> {
+  return apiRequest<SimulateResponse>(`${API_BASE}/api/simulate-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...configToPayload(config),
+      process_index: processIndex,
+      resource_index: resourceIndex,
+      amount,
+    }),
   })
 }
 

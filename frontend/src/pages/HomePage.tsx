@@ -18,6 +18,7 @@ function HomePage() {
     setConfig,
     result,
     setResult,
+    highlightedProcess,
     setHighlightedProcess,
     formKey,
     bumpFormKey,
@@ -147,7 +148,7 @@ function HomePage() {
       <SystemConfigForm
         key={formKey}
         onSave={handleSave}
-        highlightedProcess={null}
+        highlightedProcess={highlightedProcess}
         initialConfig={config}
       />
 

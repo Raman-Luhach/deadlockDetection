@@ -1,0 +1,132 @@
+.simulate-page {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.simulate-page h3 {
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+
+.simulate-desc {
+  text-align: center;
+  color: #888;
+  font-size: 0.95em;
+  margin-bottom: 1.5rem;
+}
+
+.simulate-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+}
+
+.simulate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.simulate-field label {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #aaa;
+}
+
+.simulate-field select,
+.simulate-field input {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.95em;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #1a1a2e;
+  color: #eee;
+  min-width: 70px;
+}
+
+.simulate-btn {
+  padding: 0.5rem 1.4rem;
+  font-size: 0.95em;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #646cff;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.simulate-btn:hover {
+  background: #535bf2;
+}
+
+.simulate-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.simulate-error {
+  color: #f44336;
+  text-align: center;
+  font-size: 0.9em;
+  margin-top: 0.5rem;
+}
+
+.simulate-result {
+  margin-top: 1.2rem;
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.simulate-result.granted {
+  border: 2px solid #4caf50;
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.simulate-result.blocked {
+  border: 2px solid #f44336;
+  background: rgba(244, 67, 54, 0.08);
+}
+
+.simulate-result h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1em;
+}
+
+.simulate-result.granted h4 {
+  color: #4caf50;
+}
+
+.simulate-result.blocked h4 {
+  color: #f44336;
+}
+
+.simulate-result p {
+  margin: 0;
+  font-size: 0.95em;
+  color: #ccc;
+}
+
+@media (prefers-color-scheme: light) {
+  .simulate-field label {
+    color: #555;
+  }
+  .simulate-field select,
+  .simulate-field input {
+    background: #fff;
+    color: #333;
+    border-color: #ccc;
+  }
+  .simulate-desc {
+    color: #666;
+  }
+  .simulate-result p {
+    color: #555;
+  }
+}

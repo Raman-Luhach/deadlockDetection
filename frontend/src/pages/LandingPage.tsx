@@ -19,6 +19,10 @@ function LandingPage() {
           <h3>Step-by-Step</h3>
           <p>Walk through Banker's Algorithm one step at a time</p>
         </Link>
+        <Link to="/simulate" className="landing-card">
+          <h3>Simulate Request</h3>
+          <p>Test if granting a resource request is safe</p>
+        </Link>
       </div>
     </div>
   )

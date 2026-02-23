@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import RagGraph from '../components/RagGraph'
 import { useAppState } from '../context/AppContext'
 
@@ -7,7 +8,7 @@ function RagPage() {
   if (!config) {
     return (
       <div className="page-empty">
-        <p>No configuration loaded. Go to <a href="/config">Config &amp; Detect</a> to set up the system state first.</p>
+        <p>No configuration loaded. Go to <Link to="/config">Config &amp; Detect</Link> to set up the system state first.</p>
       </div>
     )
   }

@@ -13,6 +13,7 @@ function Layout() {
           <NavLink to="/config">Config &amp; Detect</NavLink>
           <NavLink to="/rag">RAG</NavLink>
           <NavLink to="/step">Step-by-Step</NavLink>
+          <NavLink to="/simulate">Simulate</NavLink>
         </nav>
       </header>
       <main className="app-main">

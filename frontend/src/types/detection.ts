@@ -19,6 +19,12 @@ export interface StepResponse {
   deadlocked_processes?: number[]
 }
 
+export interface SimulateResponse {
+  granted: boolean
+  is_safe: boolean
+  message: string
+}
+
 export interface ResolveResponse {
   state: {
     num_processes: number

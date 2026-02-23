@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage'
 import HomePage from './pages/HomePage'
 import RagPage from './pages/RagPage'
 import StepPage from './pages/StepPage'
+import SimulatePage from './pages/SimulatePage'
 import './App.css'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route path="config" element={<HomePage />} />
             <Route path="rag" element={<RagPage />} />
             <Route path="step" element={<StepPage />} />
+            <Route path="simulate" element={<SimulatePage />} />
           </Route>
         </Routes>
       </AppProvider>
