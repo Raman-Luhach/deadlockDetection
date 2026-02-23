@@ -12,6 +12,7 @@ import {
 } from '../services/api'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'
+import { sampleScenarios } from '../data/sampleScenarios'
 
 function HomePage() {
   const [config, setConfig] = useState<SystemConfig | null>(null)
@@ -22,6 +23,7 @@ function HomePage() {
   const [resolving, setResolving] = useState(false)
   const [resolveMsg, setResolveMsg] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [formKey, setFormKey] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDetect = async () => {
@@ -56,6 +58,7 @@ function HomePage() {
         maxNeed: res.state.max_need,
       }
       setConfig(updatedConfig)
+      setFormKey((k) => k + 1)
       setResult(res.result)
       setResolveMsg(
         `Terminated P${res.victim_process} — resources released. ` +
@@ -76,6 +79,7 @@ function HomePage() {
     setError(null)
     setHighlightedProcess(null)
     setResolveMsg(null)
+    setFormKey((k) => k + 1)
   }
 
   const handleExport = async () => {
@@ -109,6 +113,7 @@ function HomePage() {
         const text = reader.result as string
         const imported = parseAndValidateImportedState(text)
         setConfig(imported)
+        setFormKey((k) => k + 1)
         setResult(null)
         setHighlightedProcess(null)
         setResolveMsg(null)
@@ -126,7 +131,22 @@ function HomePage() {
         Visualize and analyze deadlocks using the Banker's Algorithm and Resource Allocation Graphs
       </p>
 
+      <div className="sample-scenarios">
+        {sampleScenarios.map((s, i) => (
+          <button
+            key={i}
+            type="button"
+            className="sample-btn"
+            title={s.description}
+            onClick={() => handleSave(s.config)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <SystemConfigForm
+        key={formKey}
         onSave={handleSave}
         highlightedProcess={highlightedProcess}
         initialConfig={config}

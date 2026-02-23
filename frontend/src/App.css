@@ -18,6 +18,44 @@
   margin-bottom: 2rem;
 }
 
+/* Sample scenario buttons */
+.sample-scenarios {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sample-btn {
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9em;
+  font-weight: 600;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #2a2a3a;
+  color: #7ec8e3;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.sample-btn:hover {
+  background: #3a3a4a;
+  border-color: #7ec8e3;
+}
+
+@media (prefers-color-scheme: light) {
+  .sample-btn {
+    background: #e8eaf6;
+    color: #1a237e;
+    border-color: #c5cae9;
+  }
+  .sample-btn:hover {
+    background: #c5cae9;
+    border-color: #7986cb;
+  }
+}
+
 .config-preview {
   margin-top: 2rem;
   padding: 1rem 1.5rem;
