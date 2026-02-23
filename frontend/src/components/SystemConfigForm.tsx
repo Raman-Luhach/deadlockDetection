@@ -92,17 +92,26 @@ function SystemConfigForm({ onSave, highlightedProcess, initialConfig }: Props) 
     setSaved(false)
   }
 
+  /**
+   * Validation rules (same as API): dimensions 1–10, non-negative integers everywhere,
+   * allocation[i][j] <= maxNeed[i][j] for every cell.
+   */
   const validate = (): string[] => {
     const errs: string[] = []
 
-    // Check available values
+    if (!Number.isInteger(numProcesses) || numProcesses < 1 || numProcesses > 10) {
+      errs.push('Number of processes must be an integer between 1 and 10.')
+    }
+    if (!Number.isInteger(numResources) || numResources < 1 || numResources > 10) {
+      errs.push('Number of resources must be an integer between 1 and 10.')
+    }
+
     for (let j = 0; j < numResources; j++) {
       if (!Number.isInteger(available[j]) || available[j] < 0) {
         errs.push(`Available[R${j}] must be a non-negative integer.`)
       }
     }
 
-    // Check matrix values and max need >= allocation
     for (let i = 0; i < numProcesses; i++) {
       for (let j = 0; j < numResources; j++) {
         const alloc = allocation[i][j]

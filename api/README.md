@@ -199,6 +199,17 @@ Builds the Resource Allocation Graph (RAG) for the given system state. Request b
 
 Invalid request body returns `400` with `{ "error": "message" }`.
 
+## Validation rules
+
+All endpoints that accept system state (e.g. `POST /api/detect`, `/api/export`, `/api/rag`, `/api/resolve`) apply the same validation:
+
+- **Types:** Request body must be a JSON object. `num_processes` and `num_resources` must be integers in 1–10. All matrix and array entries must be numbers.
+- **Dimensions:** `available` length = `num_resources`; `allocation` and `max_need` must be `num_processes` × `num_resources`.
+- **Non-negative integers:** Every value in `available`, `allocation`, and `max_need` must be a non-negative integer.
+- **Consistency:** For each cell, `allocation[i][j] <= max_need[i][j]`.
+
+On failure the API returns **400** with `{ "error": "message" }` describing the first violation. Invalid JSON returns `{ "error": "Invalid JSON in request body" }`. Unhandled errors return **500** with `{ "error": "message" }`.
+
 ## CORS
 
 Configured to allow requests from the frontend dev server at `http://localhost:5173`.

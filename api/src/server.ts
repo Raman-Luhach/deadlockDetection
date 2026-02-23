@@ -23,7 +23,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type'],
 }));
 
-app.use(express.json());
+app.use(express.json({ strict: true }));
+
+// Invalid JSON body → 400 with clear message
+app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    res.status(400).json({ error: 'Invalid JSON in request body' });
+    return;
+  }
+  next(err);
+});
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
@@ -152,6 +161,13 @@ app.post('/api/rag', (req, res) => {
   }
   const result = buildRag(req.body as RagRequest);
   res.json(result);
+});
+
+// Catch-all error handler: 500 with consistent { error } shape
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  const message = err instanceof Error ? err.message : 'Internal server error';
+  res.status(500).json({ error: message });
 });
 
 app.listen(PORT, () => {

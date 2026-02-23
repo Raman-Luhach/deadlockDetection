@@ -369,15 +369,20 @@ export function validateStepRequest(body: unknown): string | null {
  * Validates request body for POST /api/detect.
  * Returns an error message or null if valid.
  */
+/**
+ * Validates request body for POST /api/detect (and other state-accepting endpoints).
+ * Rules: types correct, array lengths match dimensions, all values non-negative integers,
+ * allocation[i][j] <= max_need[i][j]. Returns an error message or null if valid.
+ */
 export function validateDetectRequest(body: unknown): string | null {
   if (body === null || typeof body !== 'object') return 'Request body must be a JSON object';
 
   const b = body as Record<string, unknown>;
-  if (typeof b.num_processes !== 'number' || b.num_processes < 1 || b.num_processes > MAX_PROCESSES) {
-    return `num_processes must be a number between 1 and ${MAX_PROCESSES}`;
+  if (typeof b.num_processes !== 'number' || !Number.isInteger(b.num_processes) || b.num_processes < 1 || b.num_processes > MAX_PROCESSES) {
+    return `num_processes must be an integer between 1 and ${MAX_PROCESSES}`;
   }
-  if (typeof b.num_resources !== 'number' || b.num_resources < 1 || b.num_resources > MAX_RESOURCES) {
-    return `num_resources must be a number between 1 and ${MAX_RESOURCES}`;
+  if (typeof b.num_resources !== 'number' || !Number.isInteger(b.num_resources) || b.num_resources < 1 || b.num_resources > MAX_RESOURCES) {
+    return `num_resources must be an integer between 1 and ${MAX_RESOURCES}`;
   }
 
   const np = b.num_processes as number;
@@ -387,8 +392,9 @@ export function validateDetectRequest(body: unknown): string | null {
     return `available must be an array of ${nr} numbers`;
   }
   for (let j = 0; j < nr; j++) {
-    if (typeof b.available[j] !== 'number' || b.available[j] < 0) {
-      return `available[${j}] must be a non-negative number`;
+    const v = b.available[j];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+      return `available[${j}] must be a non-negative integer`;
     }
   }
 
@@ -401,7 +407,9 @@ export function validateDetectRequest(body: unknown): string | null {
     }
     for (let j = 0; j < nr; j++) {
       const v = b.allocation[i][j];
-      if (typeof v !== 'number' || v < 0) return `allocation[${i}][${j}] must be a non-negative number`;
+      if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+        return `allocation[${i}][${j}] must be a non-negative integer`;
+      }
     }
   }
 
@@ -414,7 +422,9 @@ export function validateDetectRequest(body: unknown): string | null {
     }
     for (let j = 0; j < nr; j++) {
       const v = b.max_need[i][j];
-      if (typeof v !== 'number' || v < 0) return `max_need[${i}][${j}] must be a non-negative number`;
+      if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+        return `max_need[${i}][${j}] must be a non-negative integer`;
+      }
       if ((b.allocation as number[][])[i][j] > v) {
         return `allocation[${i}][${j}] cannot exceed max_need[${i}][${j}]`;
       }

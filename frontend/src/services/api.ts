@@ -6,6 +6,39 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const MAX_P = 10
 const MAX_R = 10
 
+/** User-friendly message when the API is unreachable (network error). */
+const NETWORK_ERROR_MSG = `Cannot reach the API at ${API_BASE}. Check that the server is running.`
+
+/**
+ * Performs a fetch and returns JSON on success. On 4xx/5xx, parses error body and throws
+ * with a clear message. Use in all API calls for consistent error handling.
+ */
+async function apiRequest<T>(url: string, options: RequestInit): Promise<T> {
+  let res: Response
+  try {
+    res = await fetch(url, options)
+  } catch (err) {
+    const msg = err instanceof TypeError ? NETWORK_ERROR_MSG : (err instanceof Error ? err.message : 'Network error')
+    throw new Error(msg)
+  }
+  const text = await res.text()
+  if (!res.ok) {
+    let errMsg: string
+    try {
+      const body = JSON.parse(text) as { error?: string }
+      errMsg = body.error || res.statusText || `Request failed (${res.status})`
+    } catch {
+      errMsg = res.statusText || `Request failed (${res.status})`
+    }
+    throw new Error(errMsg)
+  }
+  try {
+    return text ? (JSON.parse(text) as T) : ({} as T)
+  } catch {
+    throw new Error('Invalid response from API')
+  }
+}
+
 export function configToPayload(config: SystemConfig) {
   return {
     num_processes: config.numProcesses,
@@ -113,39 +146,27 @@ function matrixField(
 }
 
 export async function exportState(config: SystemConfig): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/export`, {
+  const state = await apiRequest<Record<string, unknown>>(`${API_BASE}/api/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configToPayload(config)),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Export failed' }))
-    throw new Error(err.error || `Export failed: ${res.status}`)
-  }
-  const state = await res.json()
   return JSON.stringify(state, null, 2)
 }
 
 export async function detectDeadlock(config: SystemConfig): Promise<DetectionResult> {
-  const res = await fetch(`${API_BASE}/api/detect`, {
+  return apiRequest<DetectionResult>(`${API_BASE}/api/detect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configToPayload(config)),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
 }
 
 export async function detectDeadlockStep(
   config: SystemConfig,
   stepState: StepState | null
 ): Promise<StepResponse> {
-  const res = await fetch(`${API_BASE}/api/detect/step`, {
+  return apiRequest<StepResponse>(`${API_BASE}/api/detect/step`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -153,41 +174,20 @@ export async function detectDeadlockStep(
       step_state: stepState,
     }),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
 }
 
 export async function resolveDeadlock(config: SystemConfig): Promise<ResolveResponse> {
-  const res = await fetch(`${API_BASE}/api/resolve`, {
+  return apiRequest<ResolveResponse>(`${API_BASE}/api/resolve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configToPayload(config)),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
 }
 
 export async function fetchRag(config: SystemConfig): Promise<RagData> {
-  const res = await fetch(`${API_BASE}/api/rag`, {
+  return apiRequest<RagData>(`${API_BASE}/api/rag`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configToPayload(config)),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
 }
