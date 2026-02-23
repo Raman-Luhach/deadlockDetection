@@ -71,7 +71,7 @@ function HomePage() {
 
           <StepByStepView config={config} />
 
-          <RagGraph config={config} />
+          <RagGraph config={config} detectionResult={result} />
         </>
       )}
     </div>

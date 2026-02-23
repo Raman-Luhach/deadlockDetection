@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow,
   type Node,
@@ -12,36 +12,55 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { RagData } from '../types/rag'
 import type { SystemConfig } from '../types/system'
+import type { DetectionResult } from '../types/detection'
 import { fetchRag } from '../services/api'
 import './RagGraph.css'
 
 interface Props {
   config: SystemConfig
+  /** When present and is_deadlocked, process nodes in deadlocked_processes are highlighted. */
+  detectionResult?: DetectionResult | null
 }
 
-function layoutNodes(ragData: RagData): Node[] {
+const deadlockedNodeStyle = {
+  background: '#b71c1c',
+  color: '#fff',
+  border: '3px solid #ff5252',
+  borderRadius: '50%',
+  width: 60,
+  height: 60,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 700,
+}
+
+const normalProcessNodeStyle = {
+  background: '#1a237e',
+  color: '#fff',
+  border: '2px solid #7ec8e3',
+  borderRadius: '50%',
+  width: 60,
+  height: 60,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 700,
+}
+
+function layoutNodes(ragData: RagData, deadlockedSet: Set<number>): Node[] {
   const processNodes = ragData.nodes.filter((n) => n.type === 'process')
   const resourceNodes = ragData.nodes.filter((n) => n.type === 'resource')
 
   const nodes: Node[] = []
 
   processNodes.forEach((n, i) => {
+    const isDeadlocked = deadlockedSet.has(n.id)
     nodes.push({
       id: String(n.id),
       position: { x: i * 140, y: 0 },
       data: { label: n.label },
-      style: {
-        background: '#1a237e',
-        color: '#fff',
-        border: '2px solid #7ec8e3',
-        borderRadius: '50%',
-        width: 60,
-        height: 60,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 700,
-      },
+      style: isDeadlocked ? deadlockedNodeStyle : normalProcessNodeStyle,
     })
   })
 
@@ -88,25 +107,33 @@ function buildEdges(ragData: RagData): Edge[] {
   }))
 }
 
-function RagGraph({ config }: Props) {
+function RagGraph({ config, detectionResult }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const deadlockedSet = useMemo(
+    () =>
+      new Set<number>(
+        detectionResult?.is_deadlocked ? detectionResult.deadlocked_processes : []
+      ),
+    [detectionResult]
+  )
 
   const loadRag = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const ragData = await fetchRag(config)
-      setNodes(layoutNodes(ragData))
+      setNodes(layoutNodes(ragData, deadlockedSet))
       setEdges(buildEdges(ragData))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch RAG')
     } finally {
       setLoading(false)
     }
-  }, [config, setNodes, setEdges])
+  }, [config, setNodes, setEdges, deadlockedSet])
 
   useEffect(() => {
     loadRag()
@@ -122,6 +149,9 @@ function RagGraph({ config }: Props) {
         </span>
         <span className="legend-item" title="Resource node">
           <span className="legend-square resource-legend" /> Resource
+        </span>
+        <span className="legend-item" title="Process in deadlock (cannot be satisfied)">
+          <span className="legend-circle deadlocked-legend" /> Deadlocked process
         </span>
         <span className="legend-item" title="Process waits for resource">
           <span className="legend-line request-legend" /> Request (P → R)

@@ -93,6 +93,34 @@ Constraints: all values non-negative; `allocation[i][j] <= max_need[i][j]`.
 
 Invalid request body returns `400` with `{ "error": "message" }`.
 
+### `POST /api/detect/step`
+
+Executes **one step** of the Banker's safety algorithm. Use repeatedly to step through the algorithm.
+
+**Request body (JSON):**
+
+- Same system state as `POST /api/detect`: `num_processes`, `num_resources`, `available`, `allocation`, `max_need`.
+- **`step_state`** (optional): omit or set to `null` to start from the beginning. To continue from a previous step, send the `step_state` returned by the last call.
+  - `work`: number[] — current Work vector (length = num_resources)
+  - `finish`: boolean[] — finish[i] = true if process i has been added to the safe sequence (length = num_processes)
+  - `safe_sequence`: number[] — process indices in the order they were selected so far
+
+**Response (JSON):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `"found"` = a process was selected this step; `"done"` = all processes finished (safe); `"deadlock"` = no process can proceed |
+| `selected_process` | number \| null | Process index selected this step, or null if none |
+| `explanation` | string | Short explanation of what happened |
+| `step_state` | object | Updated `{ work, finish, safe_sequence }` to send in the next request |
+| `deadlocked_processes` | number[] | Present only when `status === "deadlock"` — list of process indices that are deadlocked |
+
+**Example (first step):** Omit `step_state`. Response will have `status: "found"`, `selected_process` set, and `step_state` to use in the next call.
+
+**Example (continue):** Send the previous response’s `step_state` in the request body. Repeat until `status` is `"done"` or `"deadlock"`.
+
+Invalid request body returns `400` with `{ "error": "message" }`.
+
 ### `POST /api/rag`
 
 Builds the Resource Allocation Graph (RAG) for the given system state. Request body is the same as `POST /api/detect`.

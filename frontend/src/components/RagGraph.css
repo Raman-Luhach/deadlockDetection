@@ -51,6 +51,11 @@
   border: 2px solid #66bb6a;
 }
 
+.deadlocked-legend {
+  background: #b71c1c;
+  border: 2px solid #ff5252;
+}
+
 .legend-line {
   width: 20px;
   height: 3px;
