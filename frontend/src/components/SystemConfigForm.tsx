@@ -189,7 +189,9 @@ function SystemConfigForm({ onSave, highlightedProcess, initialConfig }: Props) 
       </div>
 
       {/* Available resources */}
-      <div className="section-heading">Available Resources</div>
+      <div className="section-heading" title="Number of instances of each resource type currently unallocated">
+        Available Resources
+      </div>
       <div className="available-row">
         {resourceLabels.map((label, j) => (
           <div className="available-cell" key={j}>
@@ -205,7 +207,9 @@ function SystemConfigForm({ onSave, highlightedProcess, initialConfig }: Props) 
       </div>
 
       {/* Allocation matrix */}
-      <div className="section-heading">Allocation Matrix</div>
+      <div className="section-heading" title="Resources currently held by each process">
+        Allocation Matrix
+      </div>
       <div className="matrix-section">
         <MatrixGrid
           matrix={allocation}
@@ -218,7 +222,9 @@ function SystemConfigForm({ onSave, highlightedProcess, initialConfig }: Props) 
       </div>
 
       {/* Max Need matrix */}
-      <div className="section-heading">Maximum Need Matrix</div>
+      <div className="section-heading" title="Maximum resources each process may ever need to complete">
+        Maximum Need Matrix
+      </div>
       <div className="matrix-section">
         <MatrixGrid
           matrix={maxNeed}

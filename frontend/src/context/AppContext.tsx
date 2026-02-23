@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useRef } from 'react'
 import type { SystemConfig } from '../types/system'
 import type { DetectionResult } from '../types/detection'

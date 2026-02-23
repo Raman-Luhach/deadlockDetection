@@ -70,3 +70,19 @@
     background: rgba(100, 108, 255, 0.06);
   }
 }
+
+@media (max-width: 600px) {
+  .app-layout {
+    padding: 0 1rem 1rem;
+  }
+  .app-title {
+    font-size: 1.5em;
+  }
+  .app-nav {
+    gap: 0.3rem;
+  }
+  .app-nav a {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85em;
+  }
+}
