@@ -15,6 +15,13 @@ import {
   type SimulateRequest,
 } from './detector';
 import { buildRag, type RagRequest } from './rag';
+import {
+  isCWorkerAvailable,
+  runDetect as cRunDetect,
+  runRag as cRunRag,
+  runResolve as cRunResolve,
+  runSimulate as cRunSimulate,
+} from './cBackend';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,13 +69,23 @@ app.get('/health', (_req, res) => {
  *   - safe_sequence: number[] (process indices in safe order, if any)
  *   - safe_sequence_length: number
  */
-app.post('/api/detect', (req, res) => {
+app.post('/api/detect', async (req, res) => {
   const validationError = validateDetectRequest(req.body);
   if (validationError) {
     res.status(400).json({ error: validationError });
     return;
   }
-  const result = detectDeadlock(req.body as DetectRequest);
+  const body = req.body as DetectRequest;
+  if (isCWorkerAvailable()) {
+    try {
+      const result = await cRunDetect(body);
+      res.json(result);
+      return;
+    } catch (_e) {
+      /* fall back to TypeScript */
+    }
+  }
+  const result = detectDeadlock(body);
   res.json(result);
 });
 
@@ -131,14 +148,24 @@ app.post('/api/detect/step', (req, res) => {
  *
  * Returns 400 if the current state is not deadlocked or victim_process_index is invalid.
  */
-app.post('/api/resolve', (req, res) => {
+app.post('/api/resolve', async (req, res) => {
   const validationError = validateResolveRequest(req.body);
   if (validationError) {
     res.status(400).json({ error: validationError });
     return;
   }
+  const body = req.body as ResolveRequest;
+  if (isCWorkerAvailable()) {
+    try {
+      const result = await cRunResolve(body);
+      res.json(result);
+      return;
+    } catch (_e) {
+      /* fall back to TypeScript */
+    }
+  }
   try {
-    const result = resolveDeadlock(req.body as ResolveRequest);
+    const result = resolveDeadlock(body);
     res.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Resolution failed';
@@ -152,13 +179,23 @@ app.post('/api/resolve', (req, res) => {
  * Request body: same as /api/detect plus process_index, resource_index, amount.
  * Response: granted, is_safe, message. Dry run only.
  */
-app.post('/api/simulate-request', (req, res) => {
+app.post('/api/simulate-request', async (req, res) => {
   const validationError = validateSimulateRequest(req.body);
   if (validationError) {
     res.status(400).json({ error: validationError });
     return;
   }
-  const result = simulateRequest(req.body as SimulateRequest);
+  const body = req.body as SimulateRequest;
+  if (isCWorkerAvailable()) {
+    try {
+      const result = await cRunSimulate(body);
+      res.json(result);
+      return;
+    } catch (_e) {
+      /* fall back to TypeScript */
+    }
+  }
+  const result = simulateRequest(body);
   res.json(result);
 });
 
@@ -172,13 +209,23 @@ app.post('/api/simulate-request', (req, res) => {
  *   - nodes: { id, label, type: "process"|"resource" }[]
  *   - edges: { from, to, type: "request"|"assignment" }[]
  */
-app.post('/api/rag', (req, res) => {
+app.post('/api/rag', async (req, res) => {
   const validationError = validateDetectRequest(req.body);
   if (validationError) {
     res.status(400).json({ error: validationError });
     return;
   }
-  const result = buildRag(req.body as RagRequest);
+  const body = req.body as RagRequest;
+  if (isCWorkerAvailable()) {
+    try {
+      const result = await cRunRag(body);
+      res.json(result);
+      return;
+    } catch (_e) {
+      /* fall back to TypeScript */
+    }
+  }
+  const result = buildRag(body);
   res.json(result);
 });
 
@@ -192,6 +239,11 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 app.listen(PORT, () => {
   console.log(`Deadlock Detection API running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  if (isCWorkerAvailable()) {
+    console.log('C api_worker binary found — detect, RAG, resolve, simulate use C core.');
+  } else {
+    console.log('C api_worker not found — using TypeScript implementation. Build with: make api_worker');
+  }
 });
 
 export default app;
